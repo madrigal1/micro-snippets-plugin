@@ -14,7 +14,7 @@ Other [plugins](https://github.com/micro-editor/plugin-channel) for Micro editor
 
 ### From Micro Version 1
 
-'ctrl-e'
+<kbd>Ctrl</kbd> <kbd>e</kbd>
 
 'plugin install snippets'
 
@@ -24,3 +24,10 @@ Other [plugins](https://github.com/micro-editor/plugin-channel) for Micro editor
 cd ~/.config/micro/plug
 git clone https://github.com/tommyshem/micro-snippets-plugin.git snippets
 ```
+
+
+When installed, to view the help file.
+
+<kbd>Ctrl</kbd> <kbd>e</kbd>
+
+`help snippets`
