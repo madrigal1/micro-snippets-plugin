@@ -18,16 +18,10 @@ Other [plugins](https://github.com/micro-editor/plugin-channel) for Micro editor
 
 'plugin install snippets'
 
-### From Micro Version 2
-
-```bash
-cd ~/.config/micro/plug
-git clone https://github.com/tommyshem/micro-snippets-plugin.git snippets
-```
-
-
 When installed, to view the help file.
 
 <kbd>Ctrl</kbd> <kbd>e</kbd>
 
 `help snippets`
+
+# Micro Version 2 is still being converted and is not ready for use
