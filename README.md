@@ -22,7 +22,7 @@ Other [plugins](https://github.com/micro-editor/plugin-channel) for Micro editor
 
 ```bash
 mkdir ~/.config/micro/plug
-git clone https://github.com/tommyshem/micro-snippets-plugin.git ~/.config/micro/plug/snippets
+git clone -b micro-v2 https://github.com/tommyshem/micro-snippets-plugin.git ~/.config/micro/plug/snippets
 ```
 
 
