@@ -10,6 +10,12 @@ Have a look at those repositories for their license and additional information!
 
 Other [plugins](https://github.com/micro-editor/plugin-channel) for Micro editor
 
+## Check which version of micro editor you have.
+
+```bash
+micro --version
+```
+
 ## Install Snippet Plugin
 
 ### From Micro Version 1
