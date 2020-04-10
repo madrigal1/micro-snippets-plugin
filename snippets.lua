@@ -1,8 +1,15 @@
-VERSION = "0.1.4"
+VERSION = "0.2.0"
+
+local micro = import("micro")
+local buffer = import("micro/buffer")
+local config = import("micro/config")
+local util = import("micro/util")
+
 local debugflag = true
 local curFileType = ""
 local snippets = {}
 local currentSnippet = nil
+local RTSnippets = config.NewRTFiletype()
 
 local Location = {}
 Location.__index = Location
@@ -38,6 +45,7 @@ function Location.offset(self)
 		end
 
 		local val = loc.ph.value
+        micro.Log("VAL", val)
 		if val then
 			add = add + val:len()
 		end
@@ -67,6 +75,7 @@ end
 function Location.endPos(self)
 	debug("Location.endPos(self)")
 	local start = self:startPos()
+    micro.Log("ENDPOS", self.ph.value)
 	return start:Move(self:len(), self.snippet.view.buf)
 end
 
@@ -81,13 +90,17 @@ function Location.focus(self)
 	local view = self.snippet.view
 	local startP = self:startPos():Move(-1, view.Buf)
 	local endP = self:endPos():Move(-1, view.Buf)
+    micro.Log(startP, endP)
 
-	while view.Cursor:LessThan(startP) do
-		view.Cursor:Right()
-	end
-	while view.Cursor:GreaterThan(endP) do
-		view.Cursor:Left()
-	end
+    if view.Cursor:LessThan(startP) then
+        while view.Cursor:LessThan(startP) do
+            view.Cursor:Right()
+        end
+    elseif view.Cursor:GreaterEqual(endP) then
+        while view.Cursor:GreaterEqual(endP) do
+            view.Cursor:Left()
+        end
+    end
 
 	if self.ph.value:len() > 0 then
 		view.Cursor:SetSelectionStart(startP)
@@ -101,7 +114,7 @@ function Location.handleInput(self, ev)
 	debug("Location.handleInput(self, ev)")
 	if ev.EventType == 1 then
 		-- TextInput
-		if ev.Deltas[1].Text == "\n" then
+		if util.String(ev.Deltas[1].Text) == "\n" then
 			Accept()
 			return false
 		else
@@ -118,7 +131,7 @@ function Location.handleInput(self, ev)
 				v = ""
 			end
 
-			self.ph.value = v:sub(0, offset-1) .. ev.Deltas[1].Text .. v:sub(offset)
+			self.ph.value = v:sub(0, offset-1) .. util.String(ev.Deltas[1].Text) .. v:sub(offset)
 			self.snippet:insert()
 			return true
 		end
@@ -186,6 +199,7 @@ function Snippet.Prepare(self)
 			num = tonumber(num)
 			local idx = self.code:find(pattern)
 			self.code = self.code:gsub(pattern, "", 1)
+            micro.Log("IDX", idx, self.code)
 
 			local placeHolders = self.placeholders[num]
 			if not placeHolders then
@@ -265,13 +279,13 @@ function Snippet.focusNext(self)
 	end
 end
 
-local function CursorWord(v)
-	debug1("CursorWord(v)",v)
-	local c = v.Cursor
+local function CursorWord(bp)
+	debug1("CursorWord(bp)",bp)
+	local c = bp.Cursor
 	local x = c.X-1 -- start one rune before the cursor
 	local result = ""
 	while x >= 0 do
-		local r = RuneStr(c:RuneUnder(x))
+		local r = util.RuneStr(c:RuneUnder(x))
 		if (r == " ") then    -- IsWordChar(r) then
 			break
 		else
@@ -286,7 +300,7 @@ end
 local function ReadSnippets(filetype)
 	debug1("ReadSnippets(filetype)",filetype)
 	local snippets = {}
-	local allSnippetFiles = ListRuntimeFiles("snippets")
+	local allSnippetFiles = config.ListRuntimeFiles(RTSnippets)
 	local exists = false
 
 	for i = 1, #allSnippetFiles do
@@ -297,11 +311,11 @@ local function ReadSnippets(filetype)
 	end
 
 	if not exists then
-		messenger:Error("No snippets file for \""..filetype.."\"")
+		micro.InfoBar():Error("No snippets file for \""..filetype.."\"")
 		return snippets
 	end
 
-	local snippetFile = ReadRuntimeFile("snippets", filetype)
+	local snippetFile = config.ReadRuntimeFile(RTSnippets, filetype)
 
 	local curSnip = nil
 	local lineNo = 0
@@ -319,7 +333,7 @@ local function ReadSnippets(filetype)
 			if codeLine ~= nil then
 				curSnip:AddCodeLine(codeLine)
 			elseif line ~= "" then
-				messenger:Error("Invalid snippets file (Line #"..tostring(lineNo)..")")
+				micro.InfoBar():Error("Invalid snippets file (Line #"..tostring(lineNo)..")")
 			end
 		end
 	end
@@ -330,9 +344,9 @@ end
 -- Check filetype and load snippets
 -- Return true is snippets loaded for filetype
 -- Return false if no snippets loaded
-local function EnsureSnippets()
+local function EnsureSnippets(bp)
 	debug("EnsureSnippets()")
-	local filetype = GetOption("filetype")
+	local filetype = bp.Buf.Settings["filetype"]
 	if curFileType ~= filetype then
 		snippets = ReadSnippets(filetype)
 		curFileType = filetype
@@ -343,9 +357,9 @@ local function EnsureSnippets()
 	return true
 end
 
-function onBeforeTextEvent(ev)
+function onBeforeTextEvent(sb, ev)
 	debug1("onBeforeTextEvent(ev)",ev)
-	if currentSnippet ~= nil and currentSnippet.view == CurView() then
+	if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
 		if currentSnippet.modText then
 			-- text event from the snippet. simply ignore it...
 			return true
@@ -355,12 +369,12 @@ function onBeforeTextEvent(ev)
 		local locEnd = nil
 
 		if ev.Deltas[1].Start ~= nil and currentSnippet ~= nil then
-			locStart = currentSnippet:findLocation(ev.Deltas[1].Start:Move(1, CurView().Buf))
+			locStart = currentSnippet:findLocation(ev.Deltas[1].Start:Move(1, currentSnippet.view.Buf))
 			locEnd = currentSnippet:findLocation(ev.Deltas[1].End)
 		end
 		if locStart ~= nil and ((locStart == locEnd) or (ev.Deltas[1].End.Y==0 and ev.Deltas[1].End.X==0))  then
 			if locStart:handleInput(ev) then
-				CurView().Cursor:Goto(-ev.C)
+				currentSnippet.view.Cursor:Goto(-ev.C)
 				return false
 			end
 		end
@@ -374,21 +388,24 @@ end
 -- Insert snippet if found.
 -- Pass in the name of the snippet to be inserted by command mode
 -- No name passed in then it will check the text left of the cursor
-function Insert(snippetName)
+function Insert(bp, args)
+    local snippetName = nil
+    if args ~= nil and #args > 0 then
+        snippetName = args[1]
+    end
 	debug1("Insert(snippetName)",snippetName)
 
-	local v = CurView()
-	local c = v.Cursor
-	local buf = v.Buf
-	local xy = Loc(c.X, c.Y)
+	local c = bp.Cursor
+	local buf = bp.Buf
+	local xy = buffer.Loc(c.X, c.Y)
 	-- check if a snippet name was passed in
 	local noArg = false
 	if not snippetName then
-		snippetName = CursorWord(v)
+		snippetName = CursorWord(bp)
 		noArg = true
 	end
 	-- check filetype and load snippets
-	local result = EnsureSnippets()
+	local result = EnsureSnippets(bp)
 	-- if no snippets return early
 	if (result == false) then return end
 
@@ -396,7 +413,7 @@ function Insert(snippetName)
 	local curSn = snippets[snippetName]
 	if curSn then
 		currentSnippet = curSn:clone()
-		currentSnippet.view = v
+		currentSnippet.view = bp
 		-- remove snippet keyword from micro buffer before inserting snippet
 		if noArg then
 			currentSnippet.startPos = xy:Move(-snippetName:len(), buf)
@@ -415,23 +432,23 @@ function Insert(snippetName)
 		end
 		-- insert snippet to micro buffer
 		currentSnippet:insert()
-		messenger:Message("Snippet Inserted \""..snippetName.."\"")
+		micro.InfoBar():Message("Snippet Inserted \""..snippetName.."\"")
 
 		-- Placeholders
 		if #currentSnippet.placeholders == 0 then
-			local pos = currentSnippet.startPos:Move(currentSnippet:str():len(), v.Buf)
-			while v.Cursor:LessThan(pos) do
-				v.Cursor:Right()
+			local pos = currentSnippet.startPos:Move(currentSnippet:str():len(), bp.Buf)
+			while bp.Cursor:LessThan(pos) do
+				bp.Cursor:Right()
 			end
-			while v.Cursor:GreaterThan(pos) do
-				v.Cursor:Left()
+			while bp.Cursor:GreaterThan(pos) do
+				bp.Cursor:Left()
 			end
 		else
 			currentSnippet:focusNext()
 		end
 	else
 		-- Snippet not found
-		messenger:Message("Unknown snippet \""..snippetName.."\"")
+		micro.InfoBar():Message("Unknown snippet \""..snippetName.."\"")
 	end
 end
 
@@ -468,6 +485,7 @@ end
 function findSnippet(input)
 	debug1("findSnippet(input)",input)
 	local result = {}
+    -- TODO: pass bp
 	EnsureSnippets()
 
 	for name,v in pairs(snippets) do
@@ -483,27 +501,27 @@ end
 function debug1(functionName, argument)
 	if debugflag == false then return end
 	if argument == nil then
-		messenger:AddLog("snippets-plugin -> function " .. functionName .. " = nil")
+		micro.Log("snippets-plugin -> function " .. functionName .. " = nil")
 	elseif argument == "" then
-	messenger:AddLog("snippets-plugin -> function " .. functionName .. " = empty string")
-	else messenger:AddLog("snippets-plugin -> function " .. functionName .. " = " .. tostring(argument))
+	micro.Log("snippets-plugin -> function " .. functionName .. " = empty string")
+	else micro.Log("snippets-plugin -> function " .. functionName .. " = " .. tostring(argument))
 	end
 end
 
 -- debug is for logging functionName only
 function debug(functionName)
 	if debugflag == false then return end
-	messenger:AddLog("snippets-plugin -> function " .. functionName)
+	micro.Log("snippets-plugin -> function " .. functionName)
 end
 
 -- debug is for logging functionName and table
 function debugt(functionName,tablepassed)
 	if debugflag == false then return end
-	messenger:AddLog("snippets-plugin -> function " .. functionName )
+	micro.Log("snippets-plugin -> function " .. functionName )
 		tprint(tablepassed)
 --	if (tablepassed == nil) then return end
 --	for key,value in pairs(tablepassed) do 
---		messenger:AddLog("key - " .. tostring(key) .. "value = " .. tostring(value[1]) )
+--		micro.Log("key - " .. tostring(key) .. "value = " .. tostring(value[1]) )
 --	end
 end
 
@@ -526,12 +544,12 @@ function dump(o)
 	for k, v in pairs(tbl) do
 	  formatting = string.rep("  ", indent) .. k .. ": "
 	  if type(v) == "table" then
-		messenger:AddLog(formatting .. "Table ->")
+		micro.Log(formatting .. "Table ->")
 		tprint(v, indent+1)
 	  elseif type(v) == nil then 
-		messenger:AddLog(formatting .. " nil")
+		micro.Log(formatting .. " nil")
 	else
-		messenger:AddLog(formatting .. tostring(v))
+		micro.Log(formatting .. tostring(v))
 	  end
 	end
   end
@@ -544,23 +562,25 @@ end
 
 function tablePrint(tbl)
 	for index = 1, #tbl do
-		messenger:AddLog(tostring(index) .. " = " .. tostring(tbl[index]))
+		micro.Log(tostring(index) .. " = " .. tostring(tbl[index]))
+    end
 end
+
+function init()
+    -- Insert a snippet
+    config.MakeCommand("snippetinsert", Insert, config.NoComplete)
+    -- Mark next placeholder
+    config.MakeCommand("snippetnext", Next, config.NoComplete)
+    -- Cancel current snippet (removes the text)
+    config.MakeCommand("snippetcancel", Cancel, config.NoComplete)
+    -- Acceptes snipped editing
+    config.MakeCommand("snippetaccept", Accept, config.NoComplete)
+
+    config.AddRuntimeFile("snippets", config.RTHelp, "help/snippets.md")
+    config.AddRuntimeFilesFromDirectory("snippets", RTSnippets, "snippets", "*.snippets")
+
+    config.TryBindKey("Alt-w", "lua:snippets.Next", false)
+    config.TryBindKey("Alt-a", "lua:snippets.Accept", false)
+    config.TryBindKey("Alt-s", "lua:snippets.Insert", false)
+    config.TryBindKey("Alt-d", "lua:snippets.Cancel", false)
 end
-
--- Insert a snippet
-MakeCommand("snippetinsert", "snippets.Insert", MakeCompletion("snippets.findSnippet"), 0)
--- Mark next placeholder
-MakeCommand("snippetnext", "snippets.Next", 0)
--- Cancel current snippet (removes the text)
-MakeCommand("snippetcancel", "snippets.Cancel", 0)
--- Acceptes snipped editing
-MakeCommand("snippetaccept", "snippets.Accept", 0)
-
-AddRuntimeFile("snippets", "help", "help/snippets.md")
-AddRuntimeFilesFromDirectory("snippets", "snippets", "snippets", "*.snippets")
-
-BindKey("Alt-w", "snippets.Next")
-BindKey("Alt-a", "snippets.Accept")
-BindKey("Alt-s", "snippets.Insert")
-BindKey("Alt-d", "snippets.Cancel")
