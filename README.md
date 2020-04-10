@@ -21,8 +21,8 @@ Other [plugins](https://github.com/micro-editor/plugin-channel) for Micro editor
 ### From Micro Version 2
 
 ```bash
-cd ~/.config/micro/plug
-git clone https://github.com/tommyshem/micro-snippets-plugin.git snippets
+mkdir ~/.config/micro/plug
+git clone https://github.com/tommyshem/micro-snippets-plugin.git ~/.config/micro/plug/snippets
 ```
 
 
