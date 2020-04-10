@@ -24,4 +24,6 @@ When installed, to view the help file.
 
 `help snippets`
 
-# Micro Version 2 is still being converted and is not ready for use
+# Micro Version 2 changed API for plugins
+
+# This is still being converted and is not ready for use
