@@ -332,6 +332,9 @@ local function EnsureSnippets(bp)
     return true
 end
 
+-- callback from micro editor when the tab key is pressed before micro editor has dealt with the autocomplete
+-- return tells micro editor false = plugin handling autocomplete no action needed from micro editor
+--                            true = plugin not handling autocomplete so micro editor needs to handle it
 function preAutocomplete(bp)
     debug("preAutocomplete called from micro editor")
     micro.InfoBar():YNPrompt("Insert snippet Y/N ", function(boolResult)
@@ -341,14 +344,20 @@ function preAutocomplete(bp)
             micro.Log("result = No")
         end
     end)
-    return false -- fasle = plugin handled autocomplete true = plugin not handled autocomplete 
+    return false -- false = plugin handled autocomplete : true = plugin not handled autocomplete
 end
 
+-- callback from micro editor when the tab key is pressed and micro editor has dealt with before calling this function
+-- return tells micro editor false =
+--                            true =
 function onAutocomplete(bp)
     debug("onAutocomplete called from micro editor")
     return false
 end
 
+-- callback from micro editor when a key is pressed
+-- return tells micro editor false =
+--                            true =
 function onBeforeTextEvent(sb, ev)
     debug1("onBeforeTextEvent(ev)", ev)
     if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
@@ -383,7 +392,7 @@ end
 -- Insert snippet if found.
 -- Pass in the name of the snippet to be inserted by command mode
 -- No name passed in then it will check the text left of the cursor
-function Insert(bp, args)
+function Insert(bp, args, prompt)
     local snippetName = nil
     if args ~= nil and #args > 0 then snippetName = args[1] end
     debug1("Insert(snippetName)", snippetName)
