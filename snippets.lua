@@ -332,6 +332,23 @@ local function EnsureSnippets(bp)
     return true
 end
 
+function preAutocomplete(bp)
+    debug("preAutocomplete called from micro editor")
+    micro.InfoBar():YNPrompt("Insert snippet Y/N ", function(boolResult)
+        if (boolResult == true) then
+            micro.Log("result = Yes")
+        else
+            micro.Log("result = No")
+        end
+    end)
+    return false -- fasle = plugin handled autocomplete true = plugin not handled autocomplete 
+end
+
+function onAutocomplete(bp)
+    debug("onAutocomplete called from micro editor")
+    return false
+end
+
 function onBeforeTextEvent(sb, ev)
     debug1("onBeforeTextEvent(ev)", ev)
     if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
