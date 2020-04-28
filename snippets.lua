@@ -8,31 +8,37 @@ local buffer = import("micro/buffer")
 local config = import("micro/config")
 local util = import("micro/util")
 
--- snippet tables
+-- Snippet Table Layout
+-- Snippets Table
+--      --> Snippet Table
+--                --> Location Table
 local snippets = {}
 local Snippet = {}
 Snippet.__index = Snippet
 local Location = {}
 Location.__index = Location
 
--- Snippet Layout Table layout
--- Snippets Table
---      --> Snippet Table
---                --> Location Table
-
 -- variables for this plugin
 local curFileType = ""
 local RTSnippets = config.NewRTFiletype()
 local currentSnippet = nil
 
+-- Location.new creates a new location in the snippet table
+-- @param index integer pass in the index
+-- @param placeholder pass in the place holder
+-- @param snippet pass in the snippet table
+-- @return Location metatable
+function Location.new(index, ph, snippet)
+    debug1("Location.new(index, ph, snip) index = ", index)
+    -- debugt("Location.new(index, ph, snip) ph = ", ph)
+    -- debugt("Location.new(index, ph, snippet) snippet = ", snippet)
 
-function Location.new(idx, ph, snippet)
-    debug1("Location.new(idx, ph, snip) idx = ", idx)
-    -- debugt("Location.new(idx, ph, snip) ph = ", ph)
-    -- debugt("Location.new(idx, ph, snippet) snippet = ", snippet)
-
+    --@table Location
+    -- @field index is the index
+    -- @field ph is the place holder in the snippet code
+    -- @field snippet table
     local self = setmetatable({}, Location)
-    self.idx = idx
+    self.index = index
     self.ph = ph
     self.snippet = snippet
     return self
@@ -51,7 +57,7 @@ function Location.offset(self)
         micro.Log("VAL", val)
         if val then add = add + val:len() end
     end
-    return self.idx + add
+    return self.index + add
 end
 
 function Location.startPos(self)
@@ -153,7 +159,8 @@ function Location.handleInput(self, ev)
     return false
 end
 
--- new snippet
+-- Snippet.new creates a new blank snippet table
+-- @return Snippet metattable
 function Snippet.new()
     debug("Snippet.new()")
     local self = setmetatable({}, Snippet)
@@ -161,7 +168,7 @@ function Snippet.new()
     return self
 end
 
--- add line of code to snippet
+-- Snippet.AddCodeLine adds lines of code to snippet table
 function Snippet.AddCodeLine(self, line)
     -- debugt("Snippet.AddCodeLine(self,line) self = " , self)
     debug1("Snippet.AddCodeLine(self, line) line = ", line)
@@ -169,6 +176,7 @@ function Snippet.AddCodeLine(self, line)
     self.code = self.code .. line
 end
 
+-- Snippet.Prepare 
 function Snippet.Prepare(self)
     debug("Snippet.Prepare(self)")
     if not self.placeholders then
@@ -181,9 +189,9 @@ function Snippet.Prepare(self)
             if not num then break end
             count = count + 1
             num = tonumber(num)
-            local idx = self.code:find(pattern)
+            local index = self.code:find(pattern)
             self.code = self.code:gsub(pattern, "", 1)
-            micro.Log("IDX", idx, self.code)
+            micro.Log("index", index, self.code)
 
             local placeHolders = self.placeholders[num]
             if not placeHolders then
@@ -191,13 +199,14 @@ function Snippet.Prepare(self)
                 self.placeholders[#self.placeholders + 1] = placeHolders
             end
             self.locations[#self.locations + 1] =
-                Location.new(idx, placeHolders, self)
+                Location.new(index, placeHolders, self)
             debug1("location total = ", #self.locations)
             if value then placeHolders.value = value end
         end
     end
 end
 
+-- Snippet.clone
 function Snippet.clone(self)
     debug("Snippet.clone(self)")
     local result = Snippet.new()
@@ -211,7 +220,7 @@ function Snippet.str(self)
     local res = self.code
     for i = #self.locations, 1, -1 do
         local loc = self.locations[i]
-        res = res:sub(0, loc.idx - 1) .. loc.ph.value .. res:sub(loc.idx)
+        res = res:sub(0, loc.index - 1) .. loc.ph.value .. res:sub(loc.index)
     end
     return res
 end
@@ -353,16 +362,16 @@ function preAutocomplete(bp)
 end
 
 -- callback from micro editor when the tab key is pressed and micro editor has dealt with before calling this function
--- return tells micro editor false =
---                            true =
+-- @return boolean tells micro editor false =
+--                                     true =
 function onAutocomplete(bp)
     debug("onAutocomplete called from micro editor")
     return false
 end
 
 -- callback from micro editor when a key is pressed
--- return tells micro editor false =
---                            true =
+-- @return boolean tells micro editor false =
+--                                     true =
 function onBeforeTextEvent(sb, ev)
     debug1("onBeforeTextEvent(ev)", ev)
     if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
