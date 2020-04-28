@@ -2,26 +2,29 @@ VERSION = "0.2.0"
 
 require "debug"
 
+-- micro editor imports
 local micro = import("micro")
 local buffer = import("micro/buffer")
 local config = import("micro/config")
 local util = import("micro/util")
 
-
-local curFileType = ""
+-- snippet tables
 local snippets = {}
-local currentSnippet = nil
-local RTSnippets = config.NewRTFiletype()
-
+local Snippet = {}
+Snippet.__index = Snippet
 local Location = {}
 Location.__index = Location
 
-local Snippet = {}
-Snippet.__index = Snippet
+-- Snippet Layout Table layout
+-- Snippets Table
+--      --> Snippet Table
+--                --> Location Table
 
--- Snippets
---      --> Snippet
---                --> Location
+-- variables for this plugin
+local curFileType = ""
+local RTSnippets = config.NewRTFiletype()
+local currentSnippet = nil
+
 
 function Location.new(idx, ph, snippet)
     debug1("Location.new(idx, ph, snip) idx = ", idx)
