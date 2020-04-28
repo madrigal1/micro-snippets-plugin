@@ -1,5 +1,7 @@
+-- snippet plugin version number
 VERSION = "0.2.0"
 
+-- debug module
 require "debug"
 
 -- micro editor imports
