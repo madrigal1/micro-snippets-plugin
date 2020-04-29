@@ -170,7 +170,9 @@ function Snippet.new()
     return self
 end
 
--- Snippet.AddCodeLine adds lines of code to snippet table
+-- Snippet.AddCodeLine adds lines of code to the snippet table
+-- @param self
+-- @param line
 function Snippet.AddCodeLine(self, line)
     -- debugt("Snippet.AddCodeLine(self,line) self = " , self)
     debug1("Snippet.AddCodeLine(self, line) line = ", line)
@@ -178,7 +180,7 @@ function Snippet.AddCodeLine(self, line)
     self.code = self.code .. line
 end
 
--- Snippet.Prepare 
+-- Snippet.Prepare
 function Snippet.Prepare(self)
     debug("Snippet.Prepare(self)")
     if not self.placeholders then
@@ -217,6 +219,9 @@ function Snippet.clone(self)
     return result
 end
 
+-- Snippet.str returns a snippet string with location markers removed
+-- @param self snippet table
+-- @return string snippet string with locations markers removed
 function Snippet.str(self)
     debug("Snippet.str(self)")
     local res = self.code
@@ -227,6 +232,10 @@ function Snippet.str(self)
     return res
 end
 
+-- Snippet.findLocation
+-- @param self
+-- @param loc
+-- @return location table or nil
 function Snippet.findLocation(self, loc)
     debug1("Snippet.findLocation(self, loc) loc = ", loc)
     for i = 1, #self.locations do
@@ -235,6 +244,8 @@ function Snippet.findLocation(self, loc)
     return nil
 end
 
+-- Snippet.remove from micro editor buffer
+-- @param self Snippet table
 function Snippet.remove(self)
     debug("Snippet.remove(self)")
     local endPos = self.startPos:Move(self:str():len(), self.view.Buf)
@@ -246,6 +257,8 @@ function Snippet.remove(self)
     self.modText = false
 end
 
+-- Snippet.insert will insert the code snippet into micro editor buffer
+-- @param self Snippet table
 function Snippet.insert(self)
     debug("Snippet.insert(self)")
     self.modText = true
@@ -253,6 +266,8 @@ function Snippet.insert(self)
     self.modText = false
 end
 
+-- Snippet.focusNext
+-- @param self Snippet table
 function Snippet.focusNext(self)
     debug("Snippet.focusNext(self)")
     if self.focused == nil then
@@ -271,6 +286,8 @@ function Snippet.focusNext(self)
     end
 end
 
+-- CursorWord
+-- @param bp buffer pane passed from micro editor
 local function CursorWord(bp)
     debug1("CursorWord(bp)", bp)
     local c = bp.Cursor
@@ -289,8 +306,13 @@ local function CursorWord(bp)
     return result
 end
 
-local function ReadSnippets(filetype)
-    debug1("ReadSnippets(filetype)", filetype)
+-- LoadSnippets reads the snippets from the correct
+-- filetype if any snippets are avaible
+-- @param filetype string filetype to search for snippets eg rust will
+-- look for rust snippets
+-- @return snippets table
+local function LoadSnippets(filetype)
+    debug1("LoadSnippets(filetype)", filetype)
     local snippets = {}
     local allSnippetFiles = config.ListRuntimeFiles(RTSnippets)
     local exists = false
@@ -330,18 +352,18 @@ local function ReadSnippets(filetype)
             end
         end
     end
-    debugt("ReadSnippets(filetype) snippets = ", snippets)
+    debugt("LoadSnippets(filetype) snippets = ", snippets)
     return snippets
 end
 
 -- Check filetype and load snippets
--- Return true is snippets loaded for filetype
--- Return false if no snippets loaded
+-- @return true = snippets loaded for the filetype
+--        false = no snippets loaded
 local function EnsureSnippets(bp)
     debug("EnsureSnippets()")
     local filetype = bp.Buf.Settings["filetype"]
     if curFileType ~= filetype then
-        snippets = ReadSnippets(filetype)
+        snippets = LoadSnippets(filetype)
         curFileType = filetype
     end
     if next(snippets) == nil then return false end
