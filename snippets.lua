@@ -56,7 +56,7 @@ function Location.offset(self)
         if loc == self then break end
 
         local val = loc.ph.value
-        micro.Log("VAL", val)
+        debug1("Location.offset -> Val = ", val)
         if val then add = add + val:len() end
     end
     return self.index + add
@@ -80,7 +80,6 @@ end
 function Location.endPos(self)
     debug("Location.endPos(self)")
     local start = self:startPos()
-    micro.Log("ENDPOS", self.ph.value)
     return start:Move(self:len(), self.snippet.view.buf)
 end
 
@@ -90,12 +89,15 @@ function Location.isWithin(self, loc)
     return loc:GreaterEqual(self:startPos()) and loc:LessEqual(self:endPos())
 end
 
+-- Location.focus
+-- @param self Location table
 function Location.focus(self)
     debug("Location.focus(self)")
     local view = self.snippet.view
     local startP = self:startPos():Move(-1, view.Buf)
     local endP = self:endPos():Move(-1, view.Buf)
-    micro.Log(startP, endP)
+    debug1("Location.focus -> startP = ",startP)
+    debug1("Location.focus -> endP = ",endP)
 
     if view.Cursor:LessThan(startP) then
         while view.Cursor:LessThan(startP) do view.Cursor:Right() end
@@ -161,6 +163,15 @@ function Location.handleInput(self, ev)
     return false
 end
 
+-- Snippet.__tostring returns table in a string format
+-- @param self Snippet table
+-- @return string of the snippet table or "" if no table data
+function Snippet.__tostring(self)
+    debug("Snippet.__tostring called")
+    -- TODO finsih off table output as a string
+    return "snippet plugin -> Snippet table __tostring called"
+end
+
 -- Snippet.new creates a new blank snippet table
 -- @return Snippet metattable
 function Snippet.new()
@@ -195,7 +206,8 @@ function Snippet.Prepare(self)
             num = tonumber(num)
             local index = self.code:find(pattern)
             self.code = self.code:gsub(pattern, "", 1)
-            micro.Log("index", index, self.code)
+            debug1("Snippet.Prepare -> index = ", index)
+            debug1("Snippet.Prepare -> snippet.code = ",self.code)
 
             local placeHolders = self.placeholders[num]
             if not placeHolders then
@@ -286,8 +298,10 @@ function Snippet.focusNext(self)
     end
 end
 
--- CursorWord
+-- CursorWord checks the micro editor buffer word from the left of the cursor
+-- and returns the word if there is one.
 -- @param bp buffer pane passed from micro editor
+-- @return result string of the word fromthe buffer or "" if no word found
 local function CursorWord(bp)
     debug1("CursorWord(bp)", bp)
     local c = bp.Cursor
@@ -356,7 +370,9 @@ local function LoadSnippets(filetype)
     return snippets
 end
 
--- Check filetype and load snippets
+-- EnsureSnippets checks the filetype from micro editor buffer and
+-- then try to load snippets for that file type
+-- @param bp buffer pane from micro editor
 -- @return true = snippets loaded for the filetype
 --        false = no snippets loaded
 local function EnsureSnippets(bp)
@@ -377,9 +393,9 @@ function preAutocomplete(bp)
     debug("preAutocomplete called from micro editor")
     micro.InfoBar():YNPrompt("Insert snippet Y/N ", function(boolResult)
         if (boolResult == true) then
-            micro.Log("result = Yes")
+            debug1("preAutocomplete ","result = Yes")
         else
-            micro.Log("result = No")
+            debug1("preAutocomplete ","result = No")
         end
     end)
     return false -- false = plugin handled autocomplete : true = plugin not handled autocomplete
