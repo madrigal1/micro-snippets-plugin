@@ -7,7 +7,7 @@ local util = import("micro/util")
 -- debugflag boolean true = debug printing on
 --                 false = debug is turned off
 local debugflag = true
-
+local pluginName = "snippets-plugin"
 -- Debug functions below
 -- debug1 is for logging functionName and 1 argument passed
 -- @param functionName string pass in function name
@@ -15,12 +15,12 @@ local debugflag = true
 function debug1(functionName, argument)
     if debugflag == false then return end
     if argument == nil then
-        micro.Log("snippets-plugin -> function " .. functionName .. " = nil")
+        micro.Log(pluginName .. " -> function " .. functionName .. " = nil")
     elseif argument == "" then
-        micro.Log("snippets-plugin -> function " .. functionName ..
+        micro.Log(pluginName .. " -> function " .. functionName ..
                       " = empty string")
     else
-        micro.Log("snippets-plugin -> function " .. functionName .. " = " ..
+        micro.Log(pluginName .. " -> function " .. functionName .. " = " ..
                       tostring(argument))
     end
 end
@@ -29,7 +29,7 @@ end
 -- @param functionName string pass in function name
 function debug(functionName)
     if debugflag == false then return end
-    micro.Log("snippets-plugin -> function " .. functionName)
+    micro.Log(pluginName .. " -> function " .. functionName)
 end
 
 
@@ -71,7 +71,7 @@ end
 -- @param tablepassed table which needs debuging
 function debugt(functionName, tablepassed)
     if debugflag == false then return end
-    micro.Log("snippets-plugin -> function " .. functionName)
+    micro.Log(pluginName .. " -> function " .. functionName)
     tprint(tablepassed)
     --	if (tablepassed == nil) then return end
     --	for key,value in pairs(tablepassed) do 
