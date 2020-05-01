@@ -25,7 +25,9 @@ local curFileType = ""
 local RTSnippets = config.NewRTFiletype()
 local currentSnippet = nil
 
--- Location.new creates a new location in the snippet table
+-- ------- Location Class --------------------------------------------------------------
+
+-- Location.new creates a new location
 -- @param index integer pass in the index
 -- @param placeholder pass in the place holder
 -- @param snippet pass in the snippet table
@@ -62,6 +64,7 @@ function Location.offset(self)
     return self.index + add
 end
 
+-- Location.startPos gets the start position
 function Location.startPos(self)
     -- debugt("Location.startPos(self) = ",self)
     local loc = self.snippet.startPos
@@ -163,6 +166,8 @@ function Location.handleInput(self, ev)
     return false
 end
 
+-- -------- Snippet Class --------------------------------------------------------------
+
 -- Snippet.__tostring returns table in a string format
 -- @param self Snippet table
 -- @return string of the snippet table or "" if no table data
@@ -175,7 +180,6 @@ function Snippet.__tostring(self)
     end
     debug("<< Snippet.__tostring")
     return snippetString
-    
 end
 
 -- Snippet.new creates a new blank snippet table
@@ -199,7 +203,7 @@ function Snippet.AddCodeLine(self, line)
     debug("<< Snippet.AddCodeLine")
 end
 
--- Snippet.Prepare
+-- Snippet.Prepare is used for adding placeholders and locations if needed
 function Snippet.Prepare(self)
     debug(">> Snippet.Prepare(self)")
     if not self.placeholders then
@@ -315,6 +319,8 @@ function Snippet.focusNext(self)
     end
 end
 
+-- -------- Utils -----------------------------------------------------------------------
+
 -- CursorWord checks the micro editor buffer word from the left of the cursor
 -- and returns the word if there is one.
 -- @param bp buffer pane passed from micro editor
@@ -404,6 +410,8 @@ local function EnsureSnippets(bp)
     debug(">> EnsureSnippets()")
     return true
 end
+
+-- -------- Micro editor callbacks ----------------------------------------------------
 
 -- callback from micro editor when the tab key is pressed before micro editor has dealt with the autocomplete
 -- return tells micro editor false = plugin handling autocomplete no action needed from micro editor
