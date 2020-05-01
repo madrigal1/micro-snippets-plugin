@@ -25,9 +25,9 @@ micro --version
 
 `plugin install snippets`
 
-## View Help file for this plugin inside micro editor
+## To view the Help file for this plugin, inside micro editor
 
-When installed, to view the help file.
+When the plugin is installed, to view the help file from inside micro editor typein below:
 
 <kbd>Ctrl</kbd> <kbd>e</kbd>
 
