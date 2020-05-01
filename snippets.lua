@@ -353,7 +353,7 @@ local function LoadSnippets(filetype)
     local snippets = {}
     local allSnippetFiles = config.ListRuntimeFiles(RTSnippets)
     local exists = false
-
+    -- check snippet files for the correct filetype
     for i = 1, #allSnippetFiles do
         if allSnippetFiles[i] == filetype then
             exists = true
@@ -409,68 +409,6 @@ local function EnsureSnippets(bp)
     if next(snippets) == nil then return false end
     debug(">> EnsureSnippets()")
     return true
-end
-
--- -------- Micro editor callbacks ----------------------------------------------------
-
--- callback from micro editor when the tab key is pressed before micro editor has dealt with the autocomplete
--- return tells micro editor false = plugin handling autocomplete no action needed from micro editor
---                            true = plugin not handling autocomplete so micro editor needs to handle it
-function preAutocomplete(bp)
-    debug(">> preAutocomplete called from micro editor")
-    micro.InfoBar():YNPrompt("Insert snippet Y/N ", function(boolResult)
-        if (boolResult == true) then
-            debug1("preAutocomplete ","result = Yes")
-        else
-            debug1("preAutocomplete ","result = No")
-        end
-    end)
-    debug("<< preAutocomlete(bp)")
-    return false -- false = plugin handled autocomplete : true = plugin not handled autocomplete
-end
-
--- callback from micro editor when the tab key is pressed and micro editor has dealt with before calling this function
--- @return boolean tells micro editor false =
---                                     true =
-function onAutocomplete(bp)
-    debug(">> onAutocomplete called from micro editor")
-    debug("<< onAutocomplete called from micro editor")
-    return false
-end
-
--- callback from micro editor when a key is pressed
--- @return boolean tells micro editor false =
---                                     true =
-function onBeforeTextEvent(sb, ev)
-    -- debug1(">> onBeforeTextEvent(ev)", ev)
-    if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
-        if currentSnippet.modText then
-            -- text event from the snippet. simply ignore it...
-            return true
-        end
-
-        local locStart = nil
-        local locEnd = nil
-
-        if ev.Deltas[1].Start ~= nil and currentSnippet ~= nil then
-            locStart = currentSnippet:findLocation(
-                           ev.Deltas[1].Start:Move(1, currentSnippet.view.Buf))
-            locEnd = currentSnippet:findLocation(ev.Deltas[1].End)
-        end
-        if locStart ~= nil and
-            ((locStart == locEnd) or
-                (ev.Deltas[1].End.Y == 0 and ev.Deltas[1].End.X == 0)) then
-            if locStart:handleInput(ev) then
-                currentSnippet.view.Cursor:Goto(-ev.C)
-                return false
-            end
-        end
-        Accept()
-        -- debug("<< onBeforeTextEvent(sb, ev)")
-    end
-
-    return true
-
 end
 
 -- Insert snippet if found.
@@ -585,7 +523,69 @@ function findSnippet(input)
     return result
 end
 
+-- -------- Micro editor callbacks ----------------------------------------------------
 
+-- callback from micro editor when the tab key is pressed before micro editor has dealt with the autocomplete
+-- return tells micro editor false = plugin handling autocomplete no action needed from micro editor
+--                            true = plugin not handling autocomplete so micro editor needs to handle it
+function preAutocomplete(bp)
+    debug(">> preAutocomplete called from micro editor")
+    micro.InfoBar():YNPrompt("Insert snippet Y/N ", function(boolResult)
+        if (boolResult == true) then
+            debug1("preAutocomplete ","result = Yes")
+        else
+            debug1("preAutocomplete ","result = No")
+        end
+    end)
+    debug("<< preAutocomlete(bp)")
+    return false -- false = plugin handled autocomplete : true = plugin not handled autocomplete
+end
+
+-- callback from micro editor when the tab key is pressed and micro editor has dealt with before calling this function
+-- @return boolean tells micro editor false =
+--                                     true =
+function onAutocomplete(bp)
+    debug(">> onAutocomplete called from micro editor")
+    debug("<< onAutocomplete called from micro editor")
+    return false
+end
+
+-- callback from micro editor when a key is pressed
+-- @return boolean tells micro editor false =
+--                                     true =
+function onBeforeTextEvent(sb, ev)
+    -- debug1(">> onBeforeTextEvent(ev)", ev)
+    if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
+        if currentSnippet.modText then
+            -- text event from the snippet. simply ignore it...
+            return true
+        end
+
+        local locStart = nil
+        local locEnd = nil
+
+        if ev.Deltas[1].Start ~= nil and currentSnippet ~= nil then
+            locStart = currentSnippet:findLocation(
+                           ev.Deltas[1].Start:Move(1, currentSnippet.view.Buf))
+            locEnd = currentSnippet:findLocation(ev.Deltas[1].End)
+        end
+        if locStart ~= nil and
+            ((locStart == locEnd) or
+                (ev.Deltas[1].End.Y == 0 and ev.Deltas[1].End.X == 0)) then
+            if locStart:handleInput(ev) then
+                currentSnippet.view.Cursor:Goto(-ev.C)
+                return false
+            end
+        end
+        Accept()
+        -- debug("<< onBeforeTextEvent(sb, ev)")
+    end
+
+    return true
+
+end
+
+-- micro editor calls this function when plugin is loaded
 function init()
     -- Insert a snippet
     config.MakeCommand("snippetinsert", Insert, config.NoComplete)
