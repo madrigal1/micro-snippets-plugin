@@ -23,7 +23,9 @@ micro --version
 
 <kbd>Ctrl</kbd> <kbd>e</kbd>
 
-'plugin install snippets'
+`plugin install snippets`
+
+## View Help file for this plugin inside micro editor
 
 When installed, to view the help file.
 
