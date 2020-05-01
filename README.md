@@ -34,3 +34,18 @@ When installed, to view the help file.
 # Micro Version 2 changed API for plugins
 
 # This is still being converted and is not ready for use
+
+# MacOS Alt keys not working in micro editor printing characters to the buffer then change the settings below
+
+## Iterm2
+
+The iTerm2 terminal has much better mouse support as well as better handling of key events. For best keybinding behavior, choose `xterm defaults` under the drop down menu `Preferences->Profiles->Keys->Presets...`.
+
+To get the left `Alt` key working in micro editor change this setting below:
+
+Go to `Preferences->Profiles->Keys` the option for `Left option key` and tick `+Esc` instead of `normal`.
+
+## MacOS Default terminal
+
+Be sure to tick the option `Use Option key as Meta key` near the bottom of the screen, under `Preferences->Profiles->Keyboard` to use <kbd>option</kbd> as <kbd>alt</kbd>.
+
