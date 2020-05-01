@@ -167,17 +167,24 @@ end
 -- @param self Snippet table
 -- @return string of the snippet table or "" if no table data
 function Snippet.__tostring(self)
-    debug("Snippet.__tostring called")
+    debug(">> Snippet.__tostring")
     -- TODO finsih off table output as a string
-    return "snippet plugin -> Snippet table __tostring called"
+    local snippetString = ""
+    if self.code ~= nil then
+        snippetString = "\nSnippet table \n" .. "self.code = " .. self.code
+    end
+    debug("<< Snippet.__tostring")
+    return snippetString
+    
 end
 
 -- Snippet.new creates a new blank snippet table
 -- @return Snippet metattable
 function Snippet.new()
-    debug("Snippet.new()")
+    debug(">> Snippet.new()")
     local self = setmetatable({}, Snippet)
     self.code = ""
+    debug("<< Snippet.new()")
     return self
 end
 
@@ -186,14 +193,15 @@ end
 -- @param line
 function Snippet.AddCodeLine(self, line)
     -- debugt("Snippet.AddCodeLine(self,line) self = " , self)
-    debug1("Snippet.AddCodeLine(self, line) line = ", line)
+    debug1(">> Snippet.AddCodeLine(self, line) line = ", line)
     if self.code ~= "" then self.code = self.code .. "\n" end
     self.code = self.code .. line
+    debug("<< Snippet.AddCodeLine")
 end
 
 -- Snippet.Prepare
 function Snippet.Prepare(self)
-    debug("Snippet.Prepare(self)")
+    debug(">> Snippet.Prepare(self)")
     if not self.placeholders then
         self.placeholders = {}
         self.locations = {}
@@ -220,14 +228,16 @@ function Snippet.Prepare(self)
             if value then placeHolders.value = value end
         end
     end
+    debug("<< Snippet.Prepare")
 end
 
 -- Snippet.clone
 function Snippet.clone(self)
-    debug("Snippet.clone(self)")
+    debug(">> Snippet.clone(self)")
     local result = Snippet.new()
     result:AddCodeLine(self.code)
     result:Prepare()
+    debug("<< Snippet.clone")
     return result
 end
 
@@ -235,12 +245,13 @@ end
 -- @param self snippet table
 -- @return string snippet string with locations markers removed
 function Snippet.str(self)
-    debug("Snippet.str(self)")
+    debug(">> Snippet.str(self)")
     local res = self.code
     for i = #self.locations, 1, -1 do
         local loc = self.locations[i]
         res = res:sub(0, loc.index - 1) .. loc.ph.value .. res:sub(loc.index)
     end
+    debug("<< Snippet.str")
     return res
 end
 
@@ -249,17 +260,21 @@ end
 -- @param loc
 -- @return location table or nil
 function Snippet.findLocation(self, loc)
-    debug1("Snippet.findLocation(self, loc) loc = ", loc)
+    debug1(">> Snippet.findLocation(self, loc) loc = ", loc)
     for i = 1, #self.locations do
-        if self.locations[i]:isWithin(loc) then return self.locations[i] end
+        if self.locations[i]:isWithin(loc) then
+            debug("<< Snippet.findLocation")
+            return self.locations[i]
+         end
     end
+    debug("<< Snippet.findLocation")
     return nil
 end
 
 -- Snippet.remove from micro editor buffer
 -- @param self Snippet table
 function Snippet.remove(self)
-    debug("Snippet.remove(self)")
+    debug(">> Snippet.remove(self)")
     local endPos = self.startPos:Move(self:str():len(), self.view.Buf)
     self.modText = true
     self.view.Cursor:SetSelectionStart(self.startPos)
@@ -267,15 +282,17 @@ function Snippet.remove(self)
     self.view.Cursor:DeleteSelection()
     self.view.Cursor:ResetSelection()
     self.modText = false
+    debug("<< Snippet.remove")
 end
 
 -- Snippet.insert will insert the code snippet into micro editor buffer
 -- @param self Snippet table
 function Snippet.insert(self)
-    debug("Snippet.insert(self)")
+    debug(">> Snippet.insert(self)")
     self.modText = true
     self.view.Buf:insert(self.startPos, self:str())
     self.modText = false
+    debug1("<< Snippets.insert -> snippet Table = ",tostring(self))
 end
 
 -- Snippet.focusNext
@@ -303,7 +320,7 @@ end
 -- @param bp buffer pane passed from micro editor
 -- @return result string of the word fromthe buffer or "" if no word found
 local function CursorWord(bp)
-    debug1("CursorWord(bp)", bp)
+    debug1(">> CursorWord(bp)", bp)
     local c = bp.Cursor
     local x = c.X - 1 -- start one rune before the cursor
     local result = ""
@@ -316,7 +333,7 @@ local function CursorWord(bp)
         end
         x = x - 1
     end
-
+    debug("<< CursorWord(bp)")
     return result
 end
 
@@ -326,7 +343,7 @@ end
 -- look for rust snippets
 -- @return snippets table
 local function LoadSnippets(filetype)
-    debug1("LoadSnippets(filetype)", filetype)
+    debug1(">> LoadSnippets(filetype)", filetype)
     local snippets = {}
     local allSnippetFiles = config.ListRuntimeFiles(RTSnippets)
     local exists = false
@@ -340,6 +357,7 @@ local function LoadSnippets(filetype)
 
     if not exists then
         micro.InfoBar():Error("No snippets file for \"" .. filetype .. "\"")
+        debug("<< LoadSnippets(filetype)")
         return snippets
     end
 
@@ -366,7 +384,7 @@ local function LoadSnippets(filetype)
             end
         end
     end
-    debugt("LoadSnippets(filetype) snippets = ", snippets)
+    debugt("<< LoadSnippets(filetype) snippets = ", snippets)
     return snippets
 end
 
@@ -376,13 +394,14 @@ end
 -- @return true = snippets loaded for the filetype
 --        false = no snippets loaded
 local function EnsureSnippets(bp)
-    debug("EnsureSnippets()")
+    debug("<< EnsureSnippets()")
     local filetype = bp.Buf.Settings["filetype"]
     if curFileType ~= filetype then
         snippets = LoadSnippets(filetype)
         curFileType = filetype
     end
     if next(snippets) == nil then return false end
+    debug(">> EnsureSnippets()")
     return true
 end
 
@@ -390,7 +409,7 @@ end
 -- return tells micro editor false = plugin handling autocomplete no action needed from micro editor
 --                            true = plugin not handling autocomplete so micro editor needs to handle it
 function preAutocomplete(bp)
-    debug("preAutocomplete called from micro editor")
+    debug(">> preAutocomplete called from micro editor")
     micro.InfoBar():YNPrompt("Insert snippet Y/N ", function(boolResult)
         if (boolResult == true) then
             debug1("preAutocomplete ","result = Yes")
@@ -398,6 +417,7 @@ function preAutocomplete(bp)
             debug1("preAutocomplete ","result = No")
         end
     end)
+    debug("<< preAutocomlete(bp)")
     return false -- false = plugin handled autocomplete : true = plugin not handled autocomplete
 end
 
@@ -405,7 +425,8 @@ end
 -- @return boolean tells micro editor false =
 --                                     true =
 function onAutocomplete(bp)
-    debug("onAutocomplete called from micro editor")
+    debug(">> onAutocomplete called from micro editor")
+    debug("<< onAutocomplete called from micro editor")
     return false
 end
 
@@ -413,7 +434,7 @@ end
 -- @return boolean tells micro editor false =
 --                                     true =
 function onBeforeTextEvent(sb, ev)
-    debug1("onBeforeTextEvent(ev)", ev)
+    -- debug1(">> onBeforeTextEvent(ev)", ev)
     if currentSnippet ~= nil and currentSnippet.view.Buf.SharedBuffer == sb then
         if currentSnippet.modText then
             -- text event from the snippet. simply ignore it...
@@ -437,6 +458,7 @@ function onBeforeTextEvent(sb, ev)
             end
         end
         Accept()
+        -- debug("<< onBeforeTextEvent(sb, ev)")
     end
 
     return true
@@ -446,7 +468,11 @@ end
 -- Insert snippet if found.
 -- Pass in the name of the snippet to be inserted by command mode
 -- No name passed in then it will check the text left of the cursor
+-- @param bp micro editor buffer pane
+-- @param args snippet word passed in
+-- @param prompt
 function Insert(bp, args, prompt)
+    debug(">> Insert(bp, args, prompt)")
     local snippetName = nil
     if args ~= nil and #args > 0 then snippetName = args[1] end
     debug1("Insert(snippetName)", snippetName)
@@ -503,37 +529,43 @@ function Insert(bp, args, prompt)
         -- Snippet not found
         micro.InfoBar():Message("Unknown snippet \"" .. snippetName .. "\"")
     end
+    debug("<< Insert()")
 end
 
 function Next()
-    debug("Next()")
+    debug(">> Next()")
     if currentSnippet then currentSnippet:focusNext() end
+    debug("<< Next()")
 end
 
 function Accept()
-    debug("Accept()")
+    debug(">> Accept()")
     currentSnippet = nil
+    debug("<< Accept()")
 end
 
 function Cancel()
-    debug("Cancel()")
+    debug(">> Cancel()")
     if currentSnippet then
         currentSnippet:remove()
         Accept()
     end
+    debug("<< Cancel()")
 end
 
 local function StartsWith(String, Start)
+    debug(">> StartWith(String, Start)")
     debug1("StartsWith(String,Start) String ", String)
     debug1("StartsWith(String,Start) start ", Start)
     String = String:upper()
     Start = Start:upper()
+    debug("<< StartWith(String, Start)")
     return string.sub(String, 1, string.len(Start)) == Start
 end
 
 -- Used for auto complete in the command prompt
 function findSnippet(input)
-    debug1("findSnippet(input)", input)
+    debug1(">> findSnippet(input)", input)
     local result = {}
     -- TODO: pass bp
     EnsureSnippets()
@@ -541,6 +573,7 @@ function findSnippet(input)
     for name, v in pairs(snippets) do
         if StartsWith(name, input) then table.insert(result, name) end
     end
+    debug("<< findSnippet(input)")
     return result
 end
 
