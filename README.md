@@ -40,6 +40,48 @@ Run the following command on your terminal
 `micro -plugin install snippets`
 
 
+#Creating custom snippets
+
+Go to ~/.config/micro/plug/snippets/snippets
+
+add a ext.snippets file  where ext is the file extenstion where you want to run the snippet
+
+#example .snippets file
+
+```
+extends c
+
+
+snippet comp
+	#include <iosstream>
+	#include <vector>
+	#define deb(x) cout << #x << x << endl;
+	using namspace std;
+	typedef vi vector<int>;
+
+	void solve() {
+		int n;
+		cin >> n;
+		cout << endl;	
+	}
+
+	int main() {
+		int tc;
+		cin >> tc;
+		while(tc--)solve();
+		return 0;
+	}
+```
+
+#Calling a snippet
+
+<kbd>Ctrl</kbd> <kbd>e</kbd>
+
+`snippetinsert comp`
+
+where comp is the snippet name
+
+
 # This is still being converted and is not ready for use
 
 # MacOS Alt keys not working in micro editor printing characters to the buffer then change the settings below
