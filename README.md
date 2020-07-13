@@ -35,6 +35,11 @@ When the plugin is installed, to view the help file from inside micro editor typ
 
 # Micro Version 2 changed API for plugins
 
+Run the following command on your terminal
+
+`micro -plugin install snippets`
+
+
 # This is still being converted and is not ready for use
 
 # MacOS Alt keys not working in micro editor printing characters to the buffer then change the settings below
